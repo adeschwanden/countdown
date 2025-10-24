@@ -125,39 +125,75 @@
     function saveCounters() {
       localStorage.setItem("fancyCounters", JSON.stringify(counters));
     }
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    function renderCounters() {
-      countersDiv.innerHTML = "";
-      counters.forEach((c, i) => {
-        const div = document.createElement("div");
-        div.className = `counter ${c.color}`;
-        const percent = (c.value / c.start) * 100;
-        div.innerHTML = `
-          <div class="name">${c.name}</div>
-          <div class="value">${c.value}</div>
-          <div class="progress"><div class="progress-bar" style="width:${percent}%;"></div></div>
-          <div class="buttons">
-            <button onclick="decrease(${i})">-1</button>
-            <button onclick="reset(${i})">Reset</button>
-          </div>
-        `;
-        countersDiv.appendChild(div);
-      });
-    }
+  const firebaseConfig = {
+    apiKey: "XXXXXX",
+    authDomain: "countdown-bis-ende-jahr.firebaseapp.com",
+    databaseURL: "https://countdown-bis-ende-jahr-default-rtdb.firebaseio.com",
+    projectId: "countdown-bis-ende-jahr",
+    storageBucket: "countdown-bis-ende-jahr.appspot.com",
+    messagingSenderId: "XXXXXX",
+    appId: "XXXXXX"
+  };
 
-    function decrease(i) {
-      if (counters[i].value > 0) counters[i].value--;
-      saveCounters();
-      renderCounters();
-    }
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    function reset(i) {
-      counters[i].value = counters[i].start;
-      saveCounters();
-      renderCounters();
-    }
+  const countersDiv = document.getElementById("counters");
+  const counterNames = [
+    { name: "Kreditkarte", color: "kreditkarte", start: 50 },
+    { name: "Abo", color: "abo", start: 50 },
+    { name: "Sympany", color: "sympany", start: 50 }
+  ];
 
-    renderCounters();
-  </script>
+  const dbRef = ref(db, "counters");
+
+  // 🔁 Live-Update aus Firebase
+  onValue(dbRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    renderCounters(data);
+  });
+
+  // 🧱 Counter anzeigen
+  function renderCounters(counters) {
+    countersDiv.innerHTML = "";
+    counterNames.forEach((c) => {
+      const val = counters[c.name]?.value ?? c.start;
+      const percent = (val / c.start) * 100;
+      const div = document.createElement("div");
+      div.className = `counter ${c.color}`;
+      div.innerHTML = `
+        <div class="name">${c.name}</div>
+        <div class="value">${val}</div>
+        <div class="progress"><div class="progress-bar" style="width:${percent}%;"></div></div>
+        <div class="buttons">
+          <button onclick="decrease('${c.name}', ${val})">-1</button>
+          <button onclick="reset('${c.name}', ${c.start})">Reset</button>
+        </div>
+      `;
+      countersDiv.appendChild(div);
+    });
+  }
+
+  // 🔽 Countdown verringern
+  window.decrease = (name, current) => {
+    if (current > 0) update(ref(db, "counters/" + name), { value: current - 1 });
+  };
+
+  // 🔁 Countdown zurücksetzen
+  window.reset = (name, start) => {
+    update(ref(db, "counters/" + name), { value: start });
+  };
+
+  // 🔰 Falls keine Daten da sind, initialisieren
+  set(dbRef, {
+    Kreditkarte: { value: 50 },
+    Abo: { value: 50 },
+    Sympany: { value: 50 }
+  });
+</script>
 </body>
 </html>
