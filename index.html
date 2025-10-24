@@ -128,6 +128,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
   import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { get, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "XXXXXX",
@@ -188,12 +189,16 @@
     update(ref(db, "counters/" + name), { value: start });
   };
 
-  // 🔰 Falls keine Daten da sind, initialisieren
-  set(dbRef, {
-    Kreditkarte: { value: 50 },
-    Abo: { value: 50 },
-    Sympany: { value: 50 }
-  });
-</script>
+// 🔰 Initialisiere die Datenbank nur, wenn sie leer ist
+
+get(dbRef).then((snapshot) => {
+  if (!snapshot.exists()) {
+    set(dbRef, {
+      Kreditkarte: { value: 50 },
+      Abo: { value: 50 },
+      Sympany: { value: 50 }
+    });
+  }
+});
 </body>
 </html>
